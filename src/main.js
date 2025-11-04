@@ -162,7 +162,7 @@ import { gameConfig } from "./gameConfig.js";
   //adding all containers to main app stage
   app.stage.addChild(topPanel, bottomPanel, gamePanel);
 
-  //mouse button click controls
+  //mouse,pen,touch button click controls all together using pointerdown
   betIncrease.on("pointerdown", () => {
     if (gameState === "IDLE") {
       bet += 50;
@@ -197,74 +197,6 @@ import { gameConfig } from "./gameConfig.js";
     }
   });
   resetGameButton.on("pointerdown", () => {
-    if (gameState === "ENDED" || gameState === "RUNNING") {
-      clearTimeout();
-      gameState = "IDLE";
-      gameStatus = "Status: " + gameState;
-      gameStatusText.text = gameStatus;
-      playerResult = false;
-      resetGameButton.alpha = 0.5;
-      startGameButton.alpha = 1.0;
-      cashOutButton.alpha = 1.0;
-      multiplier = 1.0;
-      multiplierText.text = "Multiplier: " + multiplier.toFixed(2) + "x";
-      bet = 100;
-      betText.text = "Bet: $" + bet.toFixed(2);
-      resultText.alpha = 0;
-      resultText.visible = false;
-      resultText.scale.set(0.5);
-      playerBall.x = startPoint.x;
-      playerBall.y = startPoint.y;
-      playerTrail.clear();
-      playerTrail.moveTo(playerBall.x, playerBall.y);
-      controlPoint = {
-        x: Math.random() < 0.5 ? app.screen.width - 50 : app.screen.width + 50,
-        y:
-          Math.random() < 0.5 ? app.screen.height - 75 : app.screen.height - 25,
-      };
-      animate = 0;
-      crashPoint = Math.random() * 3 + 1.5; //random crashPoint vetween 1.5 to 4.5
-      setTimeout(() => {
-        resetGameButton.alpha = 1.0;
-      }, 1000);
-    }
-  });
-
-  //touch controls
-  betIncrease.on("touchstart", () => {
-    if (gameState === "IDLE") {
-      bet += 50;
-      betText.text = "Bet: $" + bet.toFixed(2);
-    }
-  });
-  betDecrease.on("touchstart", () => {
-    if (gameState === "IDLE") {
-      bet -= bet > 0 ? 50 : bet;
-      betText.text = "Bet: $" + bet.toFixed(2);
-    }
-  });
-
-  startGameButton.on("touchstart", () => {
-    if (gameState === "IDLE") {
-      gameState = "RUNNING";
-      gameStatus = "Status: " + gameState;
-      gameStatusText.text = gameStatus;
-      startGameButton.alpha = 0.5;
-    }
-  });
-
-  cashOutButton.on("touchstart", () => {
-    if (gameState === "RUNNING") {
-      gameState = "ENDED";
-      gameStatus = "Status: " + gameState;
-      playerResult = true;
-      resultText.alpha = 1;
-      resultText.visible = true;
-      gameStatusText.text = gameStatus;
-      cashOutButton.alpha = 0.5;
-    }
-  });
-  resetGameButton.on("touchstart", () => {
     if (gameState === "ENDED" || gameState === "RUNNING") {
       clearTimeout();
       gameState = "IDLE";
