@@ -17,7 +17,6 @@ import { gameConfig } from "./gameConfig";
   let ratioY = window.innerHeight / app.screen.height;
   let ratio = Math.min(ratioX, ratioY);
 
-
   //game properties
   let multiplier = 1.00;
   let bet = 100;
@@ -72,8 +71,6 @@ import { gameConfig } from "./gameConfig";
   gameStatusText.x = app.screen.width - gameStatusText.width - 50;
   gameStatusText.y = 25;
 
-  topPanel.addChild(topGraphics, multiplierText, betText, betIncrease, betDecrease, gameStatusText, betIncreaseText, betDecreaseText);
-
   //control bottom panel
   const bottomPanel = new Container();
   bottomPanel.x = 0;
@@ -85,25 +82,6 @@ import { gameConfig } from "./gameConfig";
   startGameText.x = 10 + (150 - startGameText.width) / 2;
   startGameText.y = 25 + (25 - startGameText.height) / 2;
   startGameButton.interactive = true;
-
-  //game area Panel
-  const gamePanel = new Container();
-  gamePanel.x = 0;
-  gamePanel.y = 0;
-  gamePanel.width = app.screen.width;
-  gamePanel.height = app.screen.height - 150;
-
-  let playerBall = new Graphics().circle(0, 0, 10).fill("red");
-  playerBall.x = startPoint.x;
-  playerBall.y = startPoint.y;
-  let animate = 0;
-  const duration = 4000; // duration of the animation in milliseconds
-  let playerTrail = new Graphics().moveTo(playerBall.x, playerBall.y).stroke({ width: 2, color: "#14e3f2ff" });
-  gamePanel.addChild(playerTrail, playerBall, resultText);
-
-
-
-
   const cashOutButton = new Graphics().roundRect(app.screen.width / 2 - 75, 25, 150, 25, 15).fill("#7aff3cff");
   cashOuttext.x = app.screen.width / 2 - 75 + (150 - cashOuttext.width) / 2;
   cashOuttext.y = 25 + (25 - cashOuttext.height) / 2;
@@ -114,13 +92,32 @@ import { gameConfig } from "./gameConfig";
   resetGametext.y = 25 + (25 - resetGametext.height) / 2;
   resetGameButton.interactive = true;
 
+  //game area Panel
+  const gamePanel = new Container();
+  gamePanel.x = 0;
+  gamePanel.y = 0;
+  gamePanel.width = app.screen.width;
+  gamePanel.height = app.screen.height - 150;
+  let playerBall = new Graphics().circle(0, 0, 10).fill("red");
+  playerBall.x = startPoint.x;
+  playerBall.y = startPoint.y;
+  let animate = 0;
+  const duration = 4000; // duration of the animation in milliseconds
+  let playerTrail = new Graphics().moveTo(playerBall.x, playerBall.y).stroke({ width: 2, color: "#14e3f2ff" });
 
+  //adding all header details to top panel
+  topPanel.addChild(topGraphics, multiplierText, betText, betIncrease, betDecrease, gameStatusText, betIncreaseText, betDecreaseText);
+  // adding player to game area container
+  gamePanel.addChild(playerTrail, playerBall, resultText);
+  //adding all elements to bottom container
   bottomPanel.addChild(bottomGraphics, startGameButton, startGameText, cashOutButton, cashOuttext, resetGameButton, resetGametext);
 
-
+  //resizing all containers
   topPanel.scale.set(ratio);
   gamePanel.scale.set(ratio);
   bottomPanel.scale.set(ratio);
+
+  //adding all containers to main app stage
   app.stage.addChild(topPanel, bottomPanel, gamePanel);
 
   //mouse button click controls
@@ -250,10 +247,6 @@ import { gameConfig } from "./gameConfig";
       }, 1000);
     }
   });
-
-
-
-
 
   // Listen for animate update
   app.ticker.add((time) => {
