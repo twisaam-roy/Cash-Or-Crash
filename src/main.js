@@ -1,6 +1,11 @@
+/* eslint-disable prettier/prettier */
+/* eslint-disable no-unused-vars */
 /* eslint-disable no-undef */
 import { Application, Container, Graphics, Text } from "pixi.js";
 import { gameConfig } from "./gameConfig.js";
+import Panel from "./panel.js";
+import Player from "./player.js";
+import Button from "./Button.js";
 
 (async () => {
   // Create a new application
@@ -13,23 +18,16 @@ import { gameConfig } from "./gameConfig.js";
   // Append the application canvas to the document body
   document.getElementById("pixi-container").appendChild(app.canvas);
 
-  //app dimensions
-  let ratioX = window.innerWidth / app.screen.width;
-  let ratioY = window.innerHeight / app.screen.height;
-  let ratio = Math.min(ratioX, ratioY);
-
   //game properties
   let multiplier = 1.0;
   let bet = 100;
   let result = "";
   let crashPoint = Math.random() * 3 + 1.5; //random crashPoint vetween 1.5 to 4.5
-  let gameState = "IDLE"; // IDLE, RUNNING, ENDED
+  let gameState = gameConfig.gameState.IDLE; // IDLE, RUNNING, ENDED
   let gameStatus = "Status: " + gameState;
-  const startGame = "START GAME";
-  const cashOut = "CASH OUT";
-  const reset = "RESET GAME";
-  let playerResult = false;
+  let gameResult = false;
 
+  //curve points
   const startPoint = { x: 25, y: app.screen.height - 100 };
   let controlPoint = {
     x: Math.random() < 0.5 ? app.screen.width - 50 : app.screen.width + 50,
@@ -37,26 +35,8 @@ import { gameConfig } from "./gameConfig.js";
   };
   const endPoint = { x: app.screen.width - 25, y: 100 };
 
-  let startGameText = new Text(startGame, gameConfig.textStyle);
-  let cashOuttext = new Text(cashOut, gameConfig.textStyle);
-  let resetGametext = new Text(reset, gameConfig.textStyle);
-  let resultText = new Text(result, gameConfig.resultStyle);
-  resultText.x = app.screen.width / 2 - resultText.width / 2;
-  resultText.y = app.screen.height / 2 - resultText.height / 2;
-  resultText.scale.set(0.5);
-  resultText.anchor.set(0.5);
-  resultText.alpha = 0;
-  resultText.visible = false;
-
-  //game stats top panel
-  const topPanel = new Container();
-  topPanel.x = 0;
-  topPanel.y = 0;
-  topPanel.width = app.screen.width;
-  topPanel.height = 75;
-  const topGraphics = new Graphics()
-    .rect(0, 0, app.screen.width, 75)
-    .fill("#ffa12dff");
+  //game stat board
+  const gameStatsBoard = new Panel("top panel", "#ffa12dff", 0, 0, app.screen.width, 75);
   let multiplierText = new Text(
     "Multiplier: " + multiplier.toFixed(2) + "x",
     gameConfig.textStyle,
@@ -66,146 +46,81 @@ import { gameConfig } from "./gameConfig.js";
   let betText = new Text("Bet: $" + bet.toFixed(2), gameConfig.textStyle);
   betText.x = app.screen.width / 2 - betText.width / 2 - 25;
   betText.y = 25;
-  let betIncrease = new Graphics()
-    .ellipse(betText.x + 140, betText.y + 10, 15, 15)
-    .fill("#d0def5ff");
-  betIncrease.interactive = true;
-  let betIncreaseText = new Text("+", gameConfig.signStyle);
-  betIncreaseText.x =
-    app.screen.width / 2 - betIncrease.width / 2 + betText.width / 2 + 7.5;
-  betIncreaseText.y = 20;
-  let betDecrease = new Graphics()
-    .ellipse(betText.x + 180, betText.y + 10, 15, 15)
-    .fill("#d0def5ff");
-  betDecrease.interactive = true;
-  let betDecreaseText = new Text("-", gameConfig.signStyle);
-  betDecreaseText.x =
-    app.screen.width / 2 - betDecrease.width / 2 + betText.width / 2 + 52.5;
-  betDecreaseText.y = 20;
+
   let gameStatusText = new Text(gameStatus, gameConfig.textStyle);
   gameStatusText.x = app.screen.width - gameStatusText.width - 50;
   gameStatusText.y = 25;
 
-  //control bottom panel
-  const bottomPanel = new Container();
-  bottomPanel.x = 0;
-  bottomPanel.y = app.screen.height - 75;
-  bottomPanel.width = app.screen.width;
-  bottomPanel.height = 75;
-  const bottomGraphics = new Graphics()
-    .rect(0, 0, app.screen.width, 75)
-    .fill("#ffa12dff");
-  const startGameButton = new Graphics()
-    .roundRect(10, 25, 150, 25, 15)
-    .fill("#7aff3cff");
-  startGameText.x = 10 + (150 - startGameText.width) / 2;
-  startGameText.y = 25 + (25 - startGameText.height) / 2;
-  startGameButton.interactive = true;
-  const cashOutButton = new Graphics()
-    .roundRect(app.screen.width / 2 - 75, 25, 150, 25, 15)
-    .fill("#7aff3cff");
-  cashOuttext.x = app.screen.width / 2 - 75 + (150 - cashOuttext.width) / 2;
-  cashOuttext.y = 25 + (25 - cashOuttext.height) / 2;
-  cashOutButton.interactive = true;
+  let betIncreaseButton = new Button("+", betText.x + 140, betText.y + 10, 12, 18, "#d0def5ff");
+  let betDecreaseButton = new Button("-", betText.x + 180, betText.y + 10, 12, 18, "#d0def5ff");
+  gameStatsBoard.addChild(multiplierText, betText, betIncreaseButton, betDecreaseButton, gameStatusText);
 
-  const resetGameButton = new Graphics()
-    .roundRect(app.screen.width - 170, 25, 150, 25, 15)
-    .fill("#7aff3cff");
-  resetGametext.x = app.screen.width - 170 + (150 - resetGametext.width) / 2;
-  resetGametext.y = 25 + (25 - resetGametext.height) / 2;
-  resetGameButton.interactive = true;
 
-  //game area Panel
-  const gamePanel = new Container();
-  gamePanel.x = 0;
-  gamePanel.y = 0;
-  gamePanel.width = app.screen.width;
-  gamePanel.height = app.screen.height - 150;
-  let playerBall = new Graphics().circle(0, 0, 10).fill("red");
-  playerBall.x = startPoint.x;
-  playerBall.y = startPoint.y;
+  //game control panel
+  const gameControlBoard = new Panel("bottom panel", "#ffa12dff", 0, app.screen.height - 75, app.screen.width, 75);
+  let startGameButton = new Button("START GAME", 5, app.screen.height - gameControlBoard.height / 2 - 10, 150, 25, "#7aff3cff", 15);
+  let cashOutButton = new Button("CASH OUT", app.screen.width / 2 - 100, app.screen.height - gameControlBoard.height / 2 - 10, 150, 25, "#7aff3cff", 15);
+  let resetGameButton = new Button("RESET GAME", app.screen.width - 170, app.screen.height - gameControlBoard.height / 2 - 10, 150, 25, "#7aff3cff", 15);
+  gameControlBoard.addChild(startGameButton, cashOutButton, resetGameButton);
+
+  //game area panel
+  const gameArea = new Panel("middle pannel", "#fbdea1ff", 0, 76, app.screen.width, app.screen.height - (gameStatsBoard.height + gameControlBoard.height));
+  let player = new Player(startPoint.x, startPoint.y, 10, "red", "#02ccdaff");
   let animate = 0;
   const duration = 4000; // duration of the animation in milliseconds
-  let playerTrail = new Graphics()
-    .moveTo(playerBall.x, playerBall.y)
-    .stroke({ width: 2, color: "#14e3f2ff" });
-
-  //adding all header details to top panel
-  topPanel.addChild(
-    topGraphics,
-    multiplierText,
-    betText,
-    betIncrease,
-    betDecrease,
-    gameStatusText,
-    betIncreaseText,
-    betDecreaseText,
-  );
-  // adding player to game area container
-  gamePanel.addChild(playerTrail, playerBall, resultText);
-  //adding all elements to bottom container
-  bottomPanel.addChild(
-    bottomGraphics,
-    startGameButton,
-    startGameText,
-    cashOutButton,
-    cashOuttext,
-    resetGameButton,
-    resetGametext,
-  );
-
-  //resizing all containers
-  topPanel.scale.set(ratio);
-  gamePanel.scale.set(ratio);
-  bottomPanel.scale.set(ratio);
-
-  //adding all containers to main app stage
-  app.stage.addChild(topPanel, bottomPanel, gamePanel);
+  let resultText = new Text(result, gameConfig.resultStyle);
+  resultText.x = app.screen.width / 2 - resultText.width / 2;
+  resultText.y = app.screen.height / 2 - resultText.height / 2;
+  resultText.scale.set(0.5);
+  resultText.anchor.set(0.5);
+  resultText.alpha = 0;
+  resultText.visible = false;
+  gameArea.addChild(player.trail, player, resultText);
 
   //mouse,pen,touch button click controls all together using pointerdown
-  betIncrease.on("pointerdown", () => {
-    if (gameState === "IDLE") {
+  betIncreaseButton.on("pointerdown", () => {
+    if (gameState === gameConfig.gameState.IDLE) {
       bet += 50;
       betText.text = "Bet: $" + bet.toFixed(2);
     }
   });
-  betDecrease.on("pointerdown", () => {
-    if (gameState === "IDLE") {
+  betDecreaseButton.on("pointerdown", () => {
+    if (gameState === gameConfig.gameState.IDLE) {
       bet -= bet > 0 ? 50 : bet;
       betText.text = "Bet: $" + bet.toFixed(2);
     }
   });
 
   startGameButton.on("pointerdown", () => {
-    if (gameState === "IDLE") {
-      gameState = "RUNNING";
+    if (gameState === gameConfig.gameState.IDLE) {
+      gameState = gameConfig.gameState.RUNNING;
       gameStatus = "Status: " + gameState;
       gameStatusText.text = gameStatus;
-      startGameButton.alpha = 0.5;
+      startGameButton.onButtonClick();
     }
   });
 
   cashOutButton.on("pointerdown", () => {
-    if (gameState === "RUNNING") {
-      gameState = "ENDED";
+    if (gameState === gameConfig.gameState.RUNNING) {
+      gameState = gameConfig.gameState.ENDED;
       gameStatus = "Status: " + gameState;
-      playerResult = true;
+      gameResult = true;
       resultText.alpha = 1;
       resultText.visible = true;
       gameStatusText.text = gameStatus;
-      cashOutButton.alpha = 0.5;
+      cashOutButton.onButtonClick();
     }
   });
   resetGameButton.on("pointerdown", () => {
-    if (gameState === "ENDED" || gameState === "RUNNING") {
+    if (gameState === gameConfig.gameState.ENDED || gameState === gameConfig.gameState.RUNNING) {
+      resetGameButton.onButtonClick();
       clearTimeout();
-      gameState = "IDLE";
+      gameState = gameConfig.gameState.IDLE;
       gameStatus = "Status: " + gameState;
       gameStatusText.text = gameStatus;
-      playerResult = false;
-      resetGameButton.alpha = 0.5;
-      startGameButton.alpha = 1.0;
-      cashOutButton.alpha = 1.0;
+      gameResult = false;
+      startGameButton.reset();
+      cashOutButton.reset();
       multiplier = 1.0;
       multiplierText.text = "Multiplier: " + multiplier.toFixed(2) + "x";
       bet = 100;
@@ -213,10 +128,7 @@ import { gameConfig } from "./gameConfig.js";
       resultText.alpha = 0;
       resultText.visible = false;
       resultText.scale.set(0.5);
-      playerBall.x = startPoint.x;
-      playerBall.y = startPoint.y;
-      playerTrail.clear();
-      playerTrail.moveTo(playerBall.x, playerBall.y);
+      player.resetPlayer(startPoint.x, startPoint.y);
       controlPoint = {
         x: Math.random() < 0.5 ? app.screen.width - 50 : app.screen.width + 50,
         y:
@@ -225,14 +137,16 @@ import { gameConfig } from "./gameConfig.js";
       animate = 0;
       crashPoint = Math.random() * 3 + 1.5; //random crashPoint vetween 1.5 to 4.5
       setTimeout(() => {
-        resetGameButton.alpha = 1.0;
-      }, 1000);
+        resetGameButton.reset();
+      }, 500);
     }
   });
 
-  // Listen for animate update
+  app.stage.addChild(gameStatsBoard, gameControlBoard, gameArea);
+
+  // // Listen for animate update
   app.ticker.add((time) => {
-    if (gameState === "RUNNING") {
+    if (gameState === gameConfig.gameState.RUNNING) {
       multiplier += 0.05;
       multiplierText.text = "Multiplier: " + multiplier.toFixed(2) + "x";
       animate += (time.elapsedMS - time.deltaTime) / duration;
@@ -256,9 +170,9 @@ import { gameConfig } from "./gameConfig.js";
         (x <= endPoint.x && x >= startPoint.x) ||
         (y <= endPoint.y && y >= startPoint.y)
       ) {
-        playerBall.position.set(x, y);
-        playerTrail
-          .quadraticCurveTo(x, y, playerBall.x - 2, playerBall.y - 2)
+        player.position.set(x, y);
+        player.trail
+          .quadraticCurveTo(x, y, player.x - 2, player.y - 2)
           .setStrokeStyle({
             width: 3,
             color: "#14e3f2ff",
@@ -271,21 +185,21 @@ import { gameConfig } from "./gameConfig.js";
         x = 0;
         y = 0;
         progress = 0;
-        gameState = "ENDED";
+        gameState = gameConfig.gameState.ENDED;
         gameStatus = "Status: " + gameState;
         gameStatusText.text = gameStatus;
         resultText.alpha = 1;
         resultText.visible = true;
       } else {
-        gameState = "ENDED";
+        gameState = gameConfig.gameState.ENDED;
         gameStatus = "Status: " + gameState;
         gameStatusText.text = gameStatus;
         resultText.alpha = 1;
         resultText.visible = true;
       }
     }
-    if (gameState === "ENDED") {
-      if (playerResult) {
+    if (gameState === gameConfig.gameState.ENDED) {
+      if (gameResult) {
         result = "Player Won at: " + (bet * multiplier).toFixed(2) + "$";
         resultText.text = result;
         resultText.style.fill = "#04d700ff";
@@ -294,7 +208,7 @@ import { gameConfig } from "./gameConfig.js";
           resultText.scale.y += 0.01 * time.deltaTime;
         }
       }
-      if (!playerResult) {
+      if (!gameResult) {
         result = "Player crashed at: " + multiplier.toFixed(2) + "x";
         resultText.style.fill = "#de0000fe";
         resultText.text = result;
@@ -304,14 +218,5 @@ import { gameConfig } from "./gameConfig.js";
         }
       }
     }
-  });
-
-  window.addEventListener("resize", (e) => {
-    ratioX = e.currentTarget.innerWidth / app.screen.width;
-    ratioY = e.currentTarget.innerHeight / app.screen.height;
-    ratio = Math.min(ratioX, ratioY);
-    topPanel.scale.set(ratio);
-    gamePanel.scale.set(ratio);
-    bottomPanel.scale.set(ratio);
   });
 })();

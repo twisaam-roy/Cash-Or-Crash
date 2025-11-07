@@ -7,7 +7,7 @@
     "start": "npm run dev",
     "build": "npm run lint && webpack --mode=production",
     "lint": "eslint .",
-    "dev": "webpack serve --mode=development",
+    "dev": "webpack serve --mode=development --open",
     "preview": "serve dist" 
   },
   "dependencies": {

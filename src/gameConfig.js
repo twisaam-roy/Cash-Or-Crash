@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 export const gameConfig = {
   textStyle: {
     fontFamily: "Arial",
@@ -17,4 +18,9 @@ export const gameConfig = {
     fill: 0x000000,
     align: "center",
   },
+  gameState: {
+    IDLE: "IDLE",
+    RUNNING: "RUNNING",
+    ENDED: "ENDED",
+  }
 };
